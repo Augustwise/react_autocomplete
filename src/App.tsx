@@ -4,7 +4,12 @@ import './App.scss';
 import { peopleFromServer } from './data/people';
 import type { Person } from './types/Person';
 
-export const App: React.FC = () => {
+interface Props {
+  onSelected?: (person: Person) => void;
+  delay?: number;
+}
+
+export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [isFocused, setIsFocused] = useState(false);
@@ -25,8 +30,8 @@ export const App: React.FC = () => {
 
         setFilteredPeople(filtered);
       }
-    }, 1000),
-    [],
+    }, delay),
+    [delay],
   );
 
   const handleInputChange = useCallback(
@@ -38,12 +43,17 @@ export const App: React.FC = () => {
     [debouncedSearch],
   );
 
-  const handleSelectPerson = useCallback((person: Person) => {
-    setSelectedPerson(person);
-    if (inputRef.current) {
-      inputRef.current.value = person.name;
-    }
-  }, []);
+  const handleSelectPerson = useCallback(
+    (person: Person) => {
+      setSelectedPerson(person);
+      if (inputRef.current) {
+        inputRef.current.value = person.name;
+      }
+
+      onSelected?.(person);
+    },
+    [onSelected],
+  );
 
   return (
     <div className="container">

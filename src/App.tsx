@@ -3,11 +3,7 @@ import debounce from 'lodash/debounce';
 import './App.scss';
 import { peopleFromServer } from './data/people';
 import type { Person } from './types/Person';
-
-interface Props {
-  onSelected?: (person: Person) => void;
-  delay?: number;
-}
+import type { Props } from './types/Props';
 
 export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -16,10 +12,16 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPeople, setFilteredPeople] = useState(peopleFromServer);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [lastSearchedQuery, setLastSearchedQuery] = useState('');
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
+      if (query === lastSearchedQuery) {
+        return;
+      }
+
       setSearchQuery(query);
+      setLastSearchedQuery(query);
 
       if (query.trim() === '') {
         setFilteredPeople(peopleFromServer);
@@ -31,7 +33,7 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
         setFilteredPeople(filtered);
       }
     }, delay),
-    [delay],
+    [delay, lastSearchedQuery],
   );
 
   const handleInputChange = useCallback(

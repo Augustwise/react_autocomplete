@@ -75,7 +75,7 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
               value={inputValue}
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => setTimeout(() => setIsFocused(false), 1000)}
             />
           </div>
 

@@ -6,22 +6,21 @@ import type { Person } from './types/Person';
 import type { Props } from './types/Props';
 
 export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const [isFocused, setIsFocused] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPeople, setFilteredPeople] = useState(peopleFromServer);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [lastSearchedQuery, setLastSearchedQuery] = useState('');
+  const lastSearchedQueryRef = useRef('');
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
-      if (query === lastSearchedQuery) {
+      if (query === lastSearchedQueryRef.current) {
         return;
       }
 
       setSearchQuery(query);
-      setLastSearchedQuery(query);
+      lastSearchedQueryRef.current = query;
 
       if (query.trim() === '') {
         setFilteredPeople(peopleFromServer);
@@ -33,13 +32,15 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
         setFilteredPeople(filtered);
       }
     }, delay),
-    [delay, lastSearchedQuery],
+    [delay],
   );
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const query = event.target.value;
 
+      setInputValue(query);
+      setSelectedPerson(null);
       debouncedSearch(query);
     },
     [debouncedSearch],
@@ -48,9 +49,7 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
   const handleSelectPerson = useCallback(
     (person: Person) => {
       setSelectedPerson(person);
-      if (inputRef.current) {
-        inputRef.current.value = person.name;
-      }
+      setInputValue(person.name);
 
       onSelected?.(person);
     },
@@ -69,11 +68,11 @@ export const App: React.FC<Props> = ({ onSelected, delay = 300 }) => {
         <div className={`dropdown ${isFocused ? 'is-active' : ''}`}>
           <div className="dropdown-trigger">
             <input
-              ref={inputRef}
               type="text"
               placeholder="Enter a part of the name"
               className="input"
               data-cy="search-input"
+              value={inputValue}
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}

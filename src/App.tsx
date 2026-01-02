@@ -1,16 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import debounce from 'lodash/debounce';
 import './App.scss';
 import { peopleFromServer } from './data/people';
+import type { Person } from './types/Person';
 
 export const App: React.FC = () => {
-  const { name, born, died } = peopleFromServer[0];
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [isFocused, setIsFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPeople, setFilteredPeople] = useState(peopleFromServer);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
+      setSearchQuery(query);
+
       if (query.trim() === '') {
         setFilteredPeople(peopleFromServer);
       } else {
@@ -24,28 +29,39 @@ export const App: React.FC = () => {
     [],
   );
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const query = event.target.value;
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const query = event.target.value;
 
-    setSearchQuery(query);
-    debouncedSearch(query);
-  };
+      debouncedSearch(query);
+    },
+    [debouncedSearch],
+  );
+
+  const handleSelectPerson = useCallback((person: Person) => {
+    setSelectedPerson(person);
+    if (inputRef.current) {
+      inputRef.current.value = person.name;
+    }
+  }, []);
 
   return (
     <div className="container">
       <main className="section is-flex is-flex-direction-column">
         <h1 className="title" data-cy="title">
-          {`${name} (${born} - ${died})`}
+          {selectedPerson
+            ? `${selectedPerson.name} (${selectedPerson.born} - ${selectedPerson.died})`
+            : 'No selected person'}
         </h1>
 
         <div className={`dropdown ${isFocused ? 'is-active' : ''}`}>
           <div className="dropdown-trigger">
             <input
+              ref={inputRef}
               type="text"
               placeholder="Enter a part of the name"
               className="input"
               data-cy="search-input"
-              value={searchQuery}
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
@@ -59,6 +75,7 @@ export const App: React.FC = () => {
                   key={person.slug}
                   className="dropdown-item"
                   data-cy="suggestion-item"
+                  onMouseDown={() => handleSelectPerson(person)}
                 >
                   <p
                     className={
